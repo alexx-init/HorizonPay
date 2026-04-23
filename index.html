@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HorizonPay — Payroll on Tempo</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --black: #080808;
+      --white: #F5F2EE;
+      --cream: #EDE8E0;
+      --paper: #F9F6F0;
+      --tempo: #1A1A1A;
+      --accent: #00D4AA;
+      --accent2: #FFB800;
+      --border: #2A2A2A;
+      --border-light: rgba(245, 242, 238, 0.12);
+      --muted: #888;
+      --dim: #444;
+      --font-display: 'Playfair Display', serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --success: #00D4AA;
+      --danger: #FF4444;
+      --warning: #FFB800;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--black);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Blockchain Background ── */
+    #canvas-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.55
+    }
+
+    /* ── Noise texture overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(0, 212, 170, 0.15);
+      background: rgba(8, 8, 8, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      margin: 0 -24px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: var(--accent);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: .85rem;
+      color: var(--black);
+    }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -.02em
+    }
+
+    .brand-tag {
+      font-size: .6rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 2px 8px;
+      border-radius: 2px;
+      opacity: .8;
+    }
+
+    #connectBtn {
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: var(--white);
+      padding: 10px 22px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    #connectBtn:hover {
+      background: var(--accent);
+      color: var(--black);
+      border-color: var(--accent)
+    }
+
+    .wbadge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(0, 212, 170, .3);
+      padding: 8px 16px;
+      border-radius: 3px;
+      font-size: .75rem;
+      color: var(--accent);
+      letter-spacing: .05em;
+    }
+
+    .wdot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 2s infinite
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center
+    }
+
+    .hero-left {}
+
+    .hero-eyebrow {
+      font-size: .68rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--accent)
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent)
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: .85rem;
+      line-height: 1.8;
+      margin-bottom: 36px;
+      max-width: 400px
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 32px
+    }
+
+    .hstat {
+      border-left: 2px solid var(--border-light);
+      padding-left: 16px
+    }
+
+    .hstat-val {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--white)
+    }
+
+    .hstat-label {
+      font-size: .62rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-top: 2px
+    }
+
+    /* ── Receipt Card (hero right) ── */
+    .receipt-preview {
+      background: var(--paper);
+      color: var(--black);
+      border-radius: 4px;
+      padding: 32px;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .6), 0 0 0 1px rgba(0, 0, 0, .1);
+      position: relative;
+      font-family: var(--font-mono);
+      transform: rotate(1.5deg);
+      transition: transform .3s;
+    }
+
+    .receipt-preview:hover {
+      transform: rotate(0deg)
+    }
+
+    .receipt-holes {
+      position: absolute;
+      top: 50%;
+      left: -8px;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .receipt-hole {
+      width: 16px;
+      height: 16px;
+      background: var(--black);
+      border-radius: 50%
+    }
+
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed #ccc
+    }
+
+    .receipt-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .receipt-sub {
+      font-size: .65rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #888
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: .75rem;
+      border-bottom: 1px dotted #ddd
+    }
+
+    .receipt-row:last-child {
+      border-bottom: none
+    }
+
+    .receipt-row.total {
+      font-weight: 700;
+      font-size: .85rem;
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 2px solid #000;
+      border-bottom: none
+    }
+
+    .receipt-footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: .6rem;
+      letter-spacing: .08em;
+      color: #aaa;
+      text-transform: uppercase
+    }
+
+    .receipt-barcode {
+      height: 32px;
+      background: repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 5px, transparent 5px, transparent 8px);
+      margin-top: 12px;
+      border-radius: 1px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 40px;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--dim);
+      transition: all .2s;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent)
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--white)
+    }
+
+    .tc {
+      display: none
+    }
+
+    .tc.active {
+      display: block
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: .65rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-light)
+    }
+
+    /* ── PAPER CARD ── */
+    .paper {
+      background: rgba(8, 8, 8, 0.55);
+      border: 1px solid rgba(0, 212, 170, 0.12);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+      transition: border-color .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .paper::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .paper:hover {
+      border-color: rgba(0, 212, 170, .25)
+    }
+
+    .paper:hover::before {
+      opacity: 1
+    }
+
+    /* ── FORM ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    .full {
+      grid-column: 1/-1
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .field label {
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      padding: 11px 14px;
+      color: var(--white);
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      outline: none;
+      transition: all .2s;
+      width: 100%;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: var(--dim)
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 212, 170, .1);
+    }
+
+    .field select {
+      cursor: pointer
+    }
+
+    .field select option {
+      background: #111
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 80px
+    }
+
+    .amt-row {
+      display: flex;
+      gap: 10px
+    }
+
+    .amt-row input {
+      flex: 1
+    }
+
+    .amt-row select {
+      width: 140px;
+      flex-shrink: 0
+    }
+
+    /* ── RECIPIENT ROW ── */
+    .recipient-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto;
+      gap: 10px;
+      align-items: end;
+      padding: 16px;
+      background: rgba(0, 0, 0, .4);
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      margin-bottom: 8px;
+      animation: fadeIn .2s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .share-box {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: 100px
+    }
+
+    .share-input-wrap {
+      position: relative
+    }
+
+    .share-input-wrap input {
+      padding-right: 24px;
+      text-align: center;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--accent)
+    }
+
+    .share-input-wrap::after {
+      content: '%';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .75rem;
+      color: var(--muted);
+      pointer-events: none
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .bps-display {
+      font-size: .68rem;
+      color: var(--accent);
+      text-align: center;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .total-bps {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(0, 212, 170, .06);
+      border: 1px solid rgba(0, 212, 170, .2);
+      border-radius: 3px;
+      font-size: .75rem;
+      margin-top: 4px;
+    }
+
+    .total-bps span {
+      color: var(--muted)
+    }
+
+    .total-bps strong {
+      color: var(--accent)
+    }
+
+    .bps-warn {
+      color: var(--danger) !important
+    }
+
+    /* ── FEE NOTE ── */
+    .fee-note {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255, 184, 0, .05);
+      border: 1px solid rgba(255, 184, 0, .15);
+      border-radius: 3px;
+      font-size: .72rem;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .fee-note span {
+      color: var(--muted)
+    }
+
+    .fee-note strong {
+      color: var(--accent2)
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 3px;
+      color: var(--black);
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      margin-top: 20px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      background: #00EFC0;
+      transform: translateY(-1px)
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    .btn-outline {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      cursor: pointer;
+      transition: all .2s;
+      width: auto;
+      margin-top: 0;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .btn-danger-sm {
+      padding: 8px 14px;
+      background: rgba(255, 68, 68, .1);
+      border: 1px solid rgba(255, 68, 68, .2);
+      border-radius: 3px;
+      color: var(--danger);
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      cursor: pointer;
+      transition: all .2s;
+      width: auto;
+      margin-top: 0;
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px dashed rgba(0, 212, 170, .3);
+      border-radius: 3px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      cursor: pointer;
+      transition: all .2s;
+      margin-top: 8px;
+      letter-spacing: .05em;
+    }
+
+    .btn-add:hover {
+      background: rgba(0, 212, 170, .06);
+      border-color: var(--accent)
+    }
+
+    /* ── PAYROLL CARDS ── */
+    .config-card {
+      background: rgba(8, 8, 8, 0.5);
+      border: 1px solid rgba(0, 212, 170, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      transition: all .2s;
+      animation: fadeIn .3s ease;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .config-card:hover {
+      border-color: rgba(0, 212, 170, .3)
+    }
+
+    .config-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .config-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700
+    }
+
+    .config-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .config-meta span {
+      font-size: .68rem;
+      color: var(--dim);
+      letter-spacing: .05em
+    }
+
+    .config-body {
+      padding: 16px 20px
+    }
+
+    .recipients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px
+    }
+
+    .recipient-chip {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      padding: 10px 12px;
+    }
+
+    .chip-label {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: 3px
+    }
+
+    .chip-addr {
+      font-size: .68rem;
+      color: var(--white);
+      word-break: break-all
+    }
+
+    .chip-bps {
+      font-size: .75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 4px
+    }
+
+    .config-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    /* ── HISTORY ── */
+    .history-item {
+      border: 1px solid rgba(0, 212, 170, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      animation: fadeIn .3s ease;
+      transition: border-color .2s;
+      background: rgba(8, 8, 8, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .history-item:hover {
+      border-color: rgba(0, 212, 170, .25)
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .history-id {
+      font-size: .65rem;
+      color: var(--dim);
+      letter-spacing: .08em
+    }
+
+    .history-amount {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent)
+    }
+
+    .history-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .history-meta span {
+      font-size: .68rem;
+      color: var(--dim)
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 8px
+    }
+
+    /* ── SEND MODAL ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, .85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .modal {
+      background: rgba(8, 8, 8, 0.75);
+      border: 1px solid rgba(0, 212, 170, 0.15);
+      border-radius: 16px;
+      padding: 36px;
+      width: 100%;
+      max-width: 520px;
+      transform: translateY(16px);
+      transition: transform .25s;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+    }
+
+    .overlay.open .modal {
+      transform: translateY(0)
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.3rem;
+      cursor: pointer
+    }
+
+    .modal-close:hover {
+      color: var(--white)
+    }
+
+    /* ── SPLIT PREVIEW ── */
+    .split-preview {
+      background: rgba(245, 242, 238, .03);
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .split-title {
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px
+    }
+
+    .split-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .05)
+    }
+
+    .split-row:last-child {
+      border: none
+    }
+
+    .split-label {
+      font-size: .75rem;
+      color: var(--muted)
+    }
+
+    .split-amount {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--white)
+    }
+
+    .split-divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 10px 0
+    }
+
+    .split-total .split-amount {
+      color: var(--accent);
+      font-size: .95rem
+    }
+
+    /* ── SUCCESS ── */
+    .success-wrap {
+      text-align: center;
+      padding: 20px 0
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin: 0 auto 20px;
+      color: var(--accent);
+    }
+
+    .success-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px
+    }
+
+    .success-sub {
+      color: var(--muted);
+      font-size: .8rem;
+      margin-bottom: 20px
+    }
+
+    .tx-pill {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      padding: 10px 14px;
+      font-size: .68rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .success-actions {
+      display: flex;
+      gap: 10px
+    }
+
+    .success-actions button {
+      flex: 1;
+      margin-top: 0
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 200;
+      background: #111;
+      border: 1px solid var(--border-light);
+      border-radius: 3px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .8rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .6);
+      transform: translateY(16px);
+      opacity: 0;
+      transition: all .3s;
+      pointer-events: none;
+      max-width: 300px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .toast.success {
+      border-color: rgba(0, 212, 170, .4)
+    }
+
+    .toast.error {
+      border-color: rgba(255, 68, 68, .4)
+    }
+
+    .toast.info {
+      border-color: rgba(255, 184, 0, .3)
+    }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--dim)
+    }
+
+    .empty-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      opacity: .3
+    }
+
+    .empty p {
+      font-size: .78rem;
+      margin-top: 6px;
+      color: var(--dim)
+    }
+
+    /* ── SPINNER ── */
+    .spin {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0, 0, 0, .2);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+      vertical-align: middle
+    }
+
+    .spin-w {
+      border: 2px solid rgba(255, 255, 255, .2);
+      border-top-color: #fff
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* ── NETWORK WARN ── */
+    .net-warn {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 68, 68, .08);
+      border: 1px solid rgba(255, 68, 68, .2);
+      border-radius: 3px;
+      padding: 12px 16px;
+      font-size: .75rem;
+      color: var(--danger);
+      margin-bottom: 20px;
+    }
+
+    .net-warn.show {
+      display: flex
+    }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: .6rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .badge::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor
+    }
+
+    .b-active {
+      background: rgba(0, 212, 170, .12);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 170, .2)
+    }
+
+    .b-inactive {
+      background: rgba(255, 68, 68, .1);
+      color: var(--danger);
+      border: 1px solid rgba(255, 68, 68, .2)
+    }
+
+    .addr {
+      font-size: .7rem;
+      color: var(--dim)
+    }
+
+    /* ── LIVE DOT ── */
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .live-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #FF4444;
+      border-radius: 50%;
+      animation: livepulse 1.5s infinite;
+      box-shadow: 0 0 6px #FF4444
+    }
+
+    @keyframes livepulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .5;
+        transform: scale(1.4)
+      }
+    }
+
+    /* ── RECEIPT FLOAT ── */
+    @keyframes receiptFloat {
+      0% {
+        transform: rotate(1.5deg) translateY(0)
+      }
+
+      50% {
+        transform: rotate(-0.5deg) translateY(-10px)
+      }
+
+      100% {
+        transform: rotate(1.5deg) translateY(0)
+      }
+    }
+
+    .receipt-preview {
+      animation: receiptFloat 4s ease-in-out infinite !important
+    }
+
+    .receipt-preview:hover {
+      animation: none !important;
+      transform: rotate(0deg) !important
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 80px;
+      padding: 32px 0;
+      border-top: 1px solid var(--border-light);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 20px
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .footer-brand-name {
+      font-family: var(--font-display);
+      font-size: .95rem;
+      font-weight: 700
+    }
+
+    .footer-contract {
+      text-align: center;
+      background: rgba(0, 212, 170, .05);
+      border: 1px solid rgba(0, 212, 170, .15);
+      border-radius: 8px;
+      padding: 10px 20px
+    }
+
+    .footer-contract-label {
+      font-size: .6rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px
+    }
+
+    .footer-contract-addr {
+      font-size: .7rem;
+      color: var(--accent);
+      cursor: pointer;
+      transition: opacity .2s
+    }
+
+    .footer-contract-addr:hover {
+      opacity: .7
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .powered-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: .7rem;
+      color: var(--muted)
+    }
+
+    .powered-badge strong {
+      color: var(--white)
+    }
+
+    .tempo-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%
+    }
+
+    .twitter-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(29, 161, 242, .1);
+      border: 1px solid rgba(29, 161, 242, .25);
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: .72rem;
+      color: #1DA1F2;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: var(--font-mono);
+      text-decoration: none
+    }
+
+    .twitter-btn:hover {
+      background: rgba(29, 161, 242, .2)
+    }
+
+    .footer-copy {
+      font-size: .65rem;
+      color: var(--dim);
+      text-align: right
+    }
+
+    .share-banner {
+      background: linear-gradient(135deg, rgba(0, 212, 170, .08), rgba(255, 184, 0, .05));
+      border: 1px solid rgba(0, 212, 170, .2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 16px;
+      flex-wrap: wrap
+    }
+
+    .share-banner-text {
+      font-size: .8rem;
+      color: var(--muted)
+    }
+
+    .share-banner-text strong {
+      color: var(--white)
+    }
+
+    @media(max-width:768px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 32px
+      }
+
+      .receipt-preview {
+        display: none
+      }
+
+      .hero h1 {
+        font-size: 2rem
+      }
+
+      .grid {
+        grid-template-columns: 1fr
+      }
+
+      .full {
+        grid-column: 1
+      }
+
+      .recipient-row {
+        grid-template-columns: 1fr auto
+      }
+
+      .share-box {
+        width: 80px
+      }
+
+      .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch
+      }
+
+      .tab {
+        white-space: nowrap;
+        padding: 12px 14px;
+        font-size: .7rem
+      }
+
+      .success-actions {
+        flex-direction: column
+      }
+
+      footer {
+        grid-template-columns: 1fr;
+        text-align: center
+      }
+
+      .footer-right {
+        justify-content: center
+      }
+
+      .footer-copy {
+        text-align: center
+      }
+
+      .hero-stats {
+        flex-wrap: wrap;
+        gap: 16px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Blockchain canvas background -->
+  <canvas id="canvas-bg"></canvas>
+
+  <div class="wrap">
+    <!-- NAV -->
+    <nav>
+      <div class="brand">
+        <div class="brand-logo">HP</div>
+        <span class="brand-name">HorizonPay</span>
+        <span class="brand-tag">Tempo</span>
+      </div>
+      <div id="walletArea"><button id="connectBtn" onclick="connectWallet()">Connect Wallet</button></div>
+    </nav>
+
+    <!-- NETWORK WARN -->
+    <div class="net-warn" id="netWarn">
+      ⚠ Wrong network — switch to Tempo Mainnet
+      <button class="btn-outline" style="margin-left:auto;font-size:.65rem" onclick="switchNetwork()">Switch</button>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="hero-eyebrow live-dot">Mainnet Live · Tempo Network</div>
+        <h1>Payroll that<br />runs on <em>chain.</em></h1>
+        <p>Split stablecoin payments across your entire team in one transaction. Instant settlement, permanent record,
+          zero overhead.</p>
+        <div class="hero-stats">
+          <div class="hstat">
+            <div class="hstat-val" id="statPayrolls">0</div>
+            <div class="hstat-label">Payrolls Sent</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val" id="statVolume">$0</div>
+            <div class="hstat-label">Volume Processed</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val">0.3%</div>
+            <div class="hstat-label">Platform Fee</div>
+          </div>
+          <div class="hstat">
+            <div class="hstat-val">20</div>
+            <div class="hstat-label">Max Recipients</div>
+          </div>
+        </div>
+      </div>
+      <div class="receipt-preview">
+        <div class="receipt-holes">
+          <div class="receipt-hole"></div>
+          <div class="receipt-hole"></div>
+          <div class="receipt-hole"></div>
+        </div>
+        <div class="receipt-header">
+          <div class="receipt-title">HorizonPay</div>
+          <div class="receipt-sub">Payroll Receipt • Tempo Network</div>
+        </div>
+        <div class="receipt-row"><span>Alice — Design</span><span>$500.00</span></div>
+        <div class="receipt-row"><span>Bob — Dev</span><span>$300.00</span></div>
+        <div class="receipt-row"><span>Carol — PM</span><span>$200.00</span></div>
+        <div class="receipt-row total"><span>Total Sent</span><span>$1,000.00</span></div>
+        <div class="receipt-footer">Verified on-chain • Tempo Mainnet</div>
+        <div class="receipt-barcode"></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('create',this)">New Payroll</button>
+      <button class="tab" onclick="switchTab('manage',this)">My Payrolls</button>
+      <button class="tab" onclick="switchTab('history',this)">History</button>
+    </div>
+
+    <!-- TAB: CREATE -->
+    <div class="tc active" id="tc-create">
+      <div class="paper" style="max-width:680px;margin:0 auto">
+        <div class="section-label">Payroll Details</div>
+        <div class="grid">
+          <div class="field"><label>Payroll Name</label><input id="f-name" type="text"
+              placeholder="e.g. March 2026 Team Pay" /></div>
+          <div class="field"><label>Payment Token</label>
+            <select id="f-token">
+              <option value="USDC">USDC.e (Bridged USDC)</option>
+              <option value="pathUSD">pathUSD (Native)</option>
+              <option value="CUSTOM">Custom ERC20…</option>
+            </select>
+          </div>
+          <div class="field full" id="customField" style="display:none">
+            <label>Custom Token Address</label>
+            <input id="f-customToken" type="text" placeholder="0x..." />
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:28px">Recipients <span
+            style="color:var(--dim);font-size:.6rem">(max 20)</span></div>
+        <div id="recipientList"></div>
+        <button class="btn-add" onclick="addRecipient()">+ Add Recipient</button>
+
+        <div class="total-bps" style="margin-top:12px">
+          <span>Total allocation</span>
+          <strong id="totalBpsDisplay">0% of 100%</strong>
+        </div>
+
+        <button class="btn" id="createBtn" onclick="createConfig()">Create Payroll Setup</button>
+      </div>
+    </div>
+
+    <!-- TAB: MANAGE -->
+    <div class="tc" id="tc-manage">
+      <div class="section-label">My Payroll Setups</div>
+      <div id="configList">
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          <div>No payrolls yet</div>
+          <p>Create your first payroll setup to get started</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORY -->
+    <div class="tc" id="tc-history">
+      <div class="section-label">Payment History</div>
+      <div id="historyList">
+        <div class="empty">
+          <div class="empty-icon">📊</div>
+          <div>No payments yet</div>
+          <p>Your payment history will appear here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-brand">
+        <div class="brand-logo" style="width:28px;height:28px;font-size:.7rem">HP</div>
+        <div>
+          <div class="footer-brand-name">HorizonPay</div>
+          <div style="font-size:.62rem;color:var(--dim);margin-top:2px">Payroll infrastructure on Tempo</div>
+        </div>
+      </div>
+      <div class="footer-contract">
+        <div class="footer-contract-label">Contract Address</div>
+        <div class="footer-contract-addr" id="footerContract" onclick="copyContract()">Deploy contract to show address
+        </div>
+      </div>
+      <div class="footer-right">
+        <div class="powered-badge">
+          <div class="tempo-dot"></div>
+          Powered by <strong>Tempo</strong>
+        </div>
+        <a class="twitter-btn" id="twitterShare" href="#" target="_blank" onclick="shareOnTwitter(event)">
+          𝕏 Share
+        </a>
+        <div class="footer-copy">© 2026 HorizonPay<br />Built on Tempo Mainnet</div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- SEND MODAL -->
+  <div class="overlay" id="sendModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Send Payroll</div>
+        <button class="modal-close" onclick="closeModal('sendModal')">✕</button>
+      </div>
+      <div id="sendModalContent"></div>
+    </div>
+  </div>
+
+  <!-- SUCCESS MODAL -->
+  <div class="overlay" id="successModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Payment Sent</div>
+        <button class="modal-close" onclick="closeModal('successModal')">✕</button>
+      </div>
+      <div class="success-wrap">
+        <div class="success-icon">✓</div>
+        <div class="success-title" id="successTitle">Payroll Complete!</div>
+        <div class="success-sub" id="successSub"></div>
+        <div class="tx-pill" id="successTx" style="display:none"></div>
+        <div class="success-actions" id="successActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span id="toastIcon">✓</span><span id="toastMsg"></span></div>
+
+  <script>
+    /* ══════════════════════════════════════════
+       CONFIG
+    ══════════════════════════════════════════ */
+    const CONTRACT_ADDRESS = "0x018EE94f61CC8c46BA79BF5745102d1E1cc210Bf";
+
+    const TEMPO_CHAIN = {
+      chainId: "0x1079", chainName: "Tempo Mainnet",
+      nativeCurrency: { name: "USD", symbol: "USD", decimals: 18 },
+      rpcUrls: ["https://tempo-mainnet.drpc.org"],
+      blockExplorerUrls: ["https://explorer.tempo.xyz"]
+    };
+
+    const TOKENS = {
+      USDC: { address: "0x20c000000000000000000000b9537d11c60e8b50", decimals: 6, symbol: "USDC.e" },
+      pathUSD: { address: "0x20c0000000000000000000000000000000000000", decimals: 6, symbol: "pathUSD" },
+    };
+
+    const ABI = [
+      "function createConfig(string,address,address[],uint256[],string[]) returns (uint256)",
+      "function sendPayrollERC20(uint256,uint256,string)",
+      "function sendPayrollETH(uint256,string) payable",
+      "function toggleConfig(uint256,bool)",
+      "function getConfig(uint256) view returns (tuple(uint256 id,string name,address token,tuple(address wallet,uint256 bps,string label,bool active)[] recipients,uint256 totalBps,bool active,uint256 createdAt))",
+      "function getOwnerConfigs(address) view returns (uint256[])",
+      "function getHistory(uint256) view returns (tuple(uint256 id,uint256 configId,uint256 amount,address token,uint256 fee,uint256 timestamp,uint256 recipientCount,string note)[])",
+      "function getRecipients(uint256) view returns (tuple(address wallet,uint256 bps,string label,bool active)[])",
+      "function calculateSplit(uint256,uint256) view returns (address[],uint256[],uint256)",
+      "function payrollCount() view returns (uint256)"
+    ];
+
+    const ERC20_ABI = [
+      "function approve(address,uint256) returns (bool)",
+      "function allowance(address,address) view returns (uint256)",
+      "function symbol() view returns (string)",
+      "function decimals() view returns (uint8)"
+    ];
+
+    let provider, signer, contract, userAddress;
+    let recipientCount = 0;
+    let pendingSendConfig = null;
+    let allHistory = [];
+
+
+
+
+
+
+
+    /* ══════════════════════════════════════════
+       BLOCKCHAIN CANVAS BACKGROUND
+    ══════════════════════════════════════════ */
+
+
+    /* (function(){
+      const canvas=document.getElementById("canvas-bg");
+      const ctx=canvas.getContext("2d");
+      let W,H,nodes=[],packets=[];
+    
+      const AMOUNTS=["$12.50","$840","$0.003","$1,200","$55","$320.10","$7,500","$0.91","$4,200","$18.75","$999","$2,100"];
+      const HASHES=["0x4f2a…c8e1","0xb391…7d4f","0x1e0c…a52b","0x88fa…3301","0xd72e…99cc","0x5511…b8f0","0xac40…e172","0x6b0d…4f3a"];
+    
+      function randHex(n){let s="";for(let i=0;i<n;i++)s+="0123456789abcdef"[Math.floor(Math.random()*16)];return s;}
+    
+      function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;init();}
+    
+      function init(){
+        nodes=[];packets=[];
+        const count=Math.floor((W*H)/14000);
+        for(let i=0;i<count;i++){
+          const isValidator=Math.random()>0.7;
+          nodes.push({
+            x:Math.random()*W, y:Math.random()*H,
+            vx:(Math.random()-.5)*.6,
+            vy:(Math.random()-.5)*.6,
+            ax:0,ay:0,
+            r: isValidator ? Math.random()*8+10 : Math.random()*3+4,
+            pulse:Math.random()*Math.PI*2,
+            type: isValidator?"validator":"node",
+            amount: AMOUNTS[Math.floor(Math.random()*AMOUNTS.length)],
+            hash: "0x"+randHex(4)+"…"+randHex(4),
+            confirming: Math.random()>0.5,
+            confirmPulse: Math.random()*Math.PI*2,
+            wanderAngle: Math.random()*Math.PI*2,
+            wanderSpeed: 0.02+Math.random()*0.03,
+          });
+        }
+      }
+    
+      function spawnPacket(){
+        if(nodes.length<2)return;
+        const fi=Math.floor(Math.random()*nodes.length);
+        let ti=Math.floor(Math.random()*nodes.length);
+        while(ti===fi)ti=Math.floor(Math.random()*nodes.length);
+        const from=nodes[fi],to=nodes[ti];
+        const isUSDC=Math.random()>0.4;
+        packets.push({
+          fx:from.x,fy:from.y,
+          tx:to.x,ty:to.y,
+          x:from.x,y:from.y,
+          progress:0,
+          speed:0.004+Math.random()*0.008,
+          color:isUSDC?"#00D4AA":"#FFB800",
+          amount:AMOUNTS[Math.floor(Math.random()*AMOUNTS.length)],
+          size:3+Math.random()*2,
+          trail:[],
+        });
+      }
+    
+      setInterval(spawnPacket,400);
+    
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        const t=Date.now()*0.001;
+    
+        // ── Glowing connection lines ──
+        for(let i=0;i<nodes.length;i++){
+          for(let j=i+1;j<nodes.length;j++){
+            const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y;
+            const dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<180){
+              const alpha=(1-dist/180)*0.35;
+              // Outer glow line
+              ctx.beginPath();
+              ctx.strokeStyle=`rgba(0,212,170,${alpha*0.4})`;
+              ctx.lineWidth=3;
+              ctx.moveTo(nodes[i].x,nodes[i].y);
+              ctx.lineTo(nodes[j].x,nodes[j].y);
+              ctx.stroke();
+              // Inner bright line
+              ctx.beginPath();
+              ctx.strokeStyle=`rgba(0,212,170,${alpha})`;
+              ctx.lineWidth=0.8;
+              ctx.moveTo(nodes[i].x,nodes[i].y);
+              ctx.lineTo(nodes[j].x,nodes[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+    
+        // ── Transaction packets with trails ──
+        for(let i=packets.length-1;i>=0;i--){
+          const p=packets[i];
+          p.progress+=p.speed;
+          const ease=p.progress<0.5?2*p.progress*p.progress:1-Math.pow(-2*p.progress+2,2)/2;
+          p.x=p.fx+(p.tx-p.fx)*ease;
+          p.y=p.fy+(p.ty-p.fy)*ease;
+          p.trail.push({x:p.x,y:p.y});
+          if(p.trail.length>18)p.trail.shift();
+    
+          // Draw trail
+          for(let k=0;k<p.trail.length-1;k++){
+            const alpha=(k/p.trail.length)*0.6;
+            ctx.beginPath();
+            ctx.strokeStyle=p.color.replace(")",`,${alpha})`).replace("rgb","rgba");
+            ctx.lineWidth=(k/p.trail.length)*p.size;
+            ctx.moveTo(p.trail[k].x,p.trail[k].y);
+            ctx.lineTo(p.trail[k+1].x,p.trail[k+1].y);
+            ctx.stroke();
+          }
+    
+          // Glowing head
+          const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*4);
+          grd.addColorStop(0,p.color);
+          grd.addColorStop(0.4,p.color.replace("rgb","rgba").replace(")",",0.4)"));
+          grd.addColorStop(1,"transparent");
+          ctx.beginPath();ctx.arc(p.x,p.y,p.size*4,0,Math.PI*2);
+          ctx.fillStyle=grd;ctx.fill();
+          ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+          ctx.fillStyle=p.color;ctx.fill();
+    
+          // Amount label on packet
+          if(p.progress>0.1&&p.progress<0.9){
+            ctx.font="bold 9px 'IBM Plex Mono'";
+            ctx.fillStyle=p.color;
+            ctx.shadowColor=p.color;ctx.shadowBlur=6;
+            ctx.fillText(p.amount,p.x+p.size*2+2,p.y-p.size*2);
+            ctx.shadowBlur=0;
+          }
+    
+          if(p.progress>=1)packets.splice(i,1);
+        }
+    
+        // ── Nodes ──
+        nodes.forEach(n=>{
+          const pulse=Math.sin(t*1.2+n.pulse)*0.5+0.5;
+          const isV=n.type==="validator";
+          const color=isV?"#00D4AA":"#FFB800";
+          const colorRgb=isV?"0,212,170":"255,184,0";
+    
+          // Big outer glow
+          const grd=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2.5);
+          grd.addColorStop(0,`rgba(${colorRgb},${0.12+pulse*0.1})`);
+          grd.addColorStop(0.5,`rgba(${colorRgb},${0.04+pulse*0.04})`);
+          grd.addColorStop(1,"transparent");
+          ctx.beginPath();ctx.arc(n.x,n.y,n.r*2.5,0,Math.PI*2);
+          ctx.fillStyle=grd;ctx.fill();
+    
+          // Ring
+          ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+          ctx.strokeStyle=`rgba(${colorRgb},${0.4+pulse*0.5})`;
+          ctx.lineWidth=1.5;ctx.stroke();
+    
+          // Core fill
+          ctx.beginPath();ctx.arc(n.x,n.y,n.r-1,0,Math.PI*2);
+          ctx.fillStyle=`rgba(${colorRgb},${0.08+pulse*0.06})`;
+          ctx.fill();
+    
+          // Inner dot
+          ctx.beginPath();ctx.arc(n.x,n.y,3,0,Math.PI*2);
+          ctx.fillStyle=`rgba(${colorRgb},${0.7+pulse*0.3})`;
+          ctx.fill();
+    
+          // Text inside node
+          ctx.shadowColor=color;ctx.shadowBlur=8;
+          if(isV){
+            ctx.font=`bold ${Math.max(7,n.r*0.5)}px 'IBM Plex Mono'`;
+            ctx.fillStyle=`rgba(${colorRgb},${0.85+pulse*0.15})`;
+            ctx.textAlign="center";ctx.textBaseline="middle";
+            ctx.fillText(n.amount,n.x,n.y-2);
+            ctx.font=`${Math.max(5,n.r*0.32)}px 'IBM Plex Mono'`;
+            ctx.fillStyle=`rgba(${colorRgb},0.45)`;
+            ctx.fillText(n.hash,n.x,n.y+n.r*0.45);
+          } else {
+            ctx.font="6px 'IBM Plex Mono'";
+            ctx.fillStyle=`rgba(${colorRgb},0.5)`;
+            ctx.textAlign="center";ctx.textBaseline="middle";
+            ctx.fillText(n.hash.slice(0,6),n.x,n.y);
+          }
+          ctx.shadowBlur=0;ctx.textAlign="left";ctx.textBaseline="alphabetic";
+    
+          // Confirming ring animation
+          if(n.confirming){
+            const cp=((t*0.5+n.confirmPulse)%1);
+            ctx.beginPath();
+            ctx.arc(n.x,n.y,n.r+cp*12,0,Math.PI*2);
+            ctx.strokeStyle=`rgba(${colorRgb},${(1-cp)*0.3})`;
+            ctx.lineWidth=1;ctx.stroke();
+          }
+    
+          // Wander steering — truly random organic movement
+          n.wanderAngle += (Math.random()-.5)*n.wanderSpeed*10;
+          n.vx += Math.cos(n.wanderAngle)*0.03;
+          n.vy += Math.sin(n.wanderAngle)*0.03;
+          // Cap speed
+          const spd=Math.sqrt(n.vx*n.vx+n.vy*n.vy);
+          if(spd>0.8){n.vx=(n.vx/spd)*0.8;n.vy=(n.vy/spd)*0.8;}
+          n.x+=n.vx;n.y+=n.vy;
+          if(n.x<-n.r)n.x=W+n.r;else if(n.x>W+n.r)n.x=-n.r;
+          if(n.y<-n.r)n.y=H+n.r;else if(n.y>H+n.r)n.y=-n.r;
+        });
+    
+        // ── Live scrolling stats at bottom ──
+        ctx.font="8px 'IBM Plex Mono'";
+        ctx.fillStyle="rgba(0,212,170,0.2)";
+        const hash=`Latest: 0x${randHex(8)}…${randHex(4)} | Block #${(10213410+Math.floor(t*2)).toLocaleString()} | ${packets.length} pending txs`;
+        ctx.fillText(hash,20,H-14);
+    
+        requestAnimationFrame(draw);
+      }
+    
+      window.addEventListener("resize",resize);
+      resize();draw();
+    })();  
+     */
+
+
+
+
+
+
+
+    /* ══════════════════════════════════════════
+       WALLET
+    ══════════════════════════════════════════ */
+    async function connectWallet() {
+      if (!window.ethereum) { showToast("Install MetaMask or Rabby first", "error"); return; }
+      const btn = document.getElementById("connectBtn");
+      btn.disabled = true; btn.innerHTML = '<span class="spin spin-w"></span>';
+      try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
+        await switchNetwork();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        document.getElementById("walletArea").innerHTML = `<div class="wbadge"><div class="wdot"></div>${userAddress.slice(0, 6)}...${userAddress.slice(-4)}</div>`;
+        setContractAddress(CONTRACT_ADDRESS);
+        await refreshStats(); await loadConfigs(); await loadAllHistory();
+        showToast("Wallet connected!", "success");
+        window.ethereum.on("accountsChanged", a => { if (!a.length) location.reload(); else { userAddress = a[0]; location.reload(); } });
+        window.ethereum.on("chainChanged", () => location.reload());
+      } catch (e) {
+        if (e.code === 4001) showToast("Rejected", "error");
+        else showToast(e.message || "Failed", "error");
+        btn.disabled = false; btn.textContent = "Connect Wallet";
+      }
+    }
+
+    async function switchNetwork() {
+      try { await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: TEMPO_CHAIN.chainId }] }); document.getElementById("netWarn").classList.remove("show"); }
+      catch (e) { if (e.code === 4902) { try { await window.ethereum.request({ method: "wallet_addEthereumChain", params: [TEMPO_CHAIN] }); } catch (e2) { document.getElementById("netWarn").classList.add("show"); } } else document.getElementById("netWarn").classList.add("show"); }
+    }
+
+    async function refreshStats() {
+      if (!contract) return;
+      try {
+        const c = await contract.payrollCount();
+        document.getElementById("statPayrolls").textContent = c.toString();
+        // Calculate real volume from all history
+        let totalVol = 0;
+        try {
+          const ids = await contract.getOwnerConfigs(userAddress);
+          for (const id of ids) {
+            const h = await contract.getHistory(id);
+            const cfg = await contract.getConfig(id);
+            const tk = getTokenByAddr(cfg.token);
+            const dec = tk?.decimals || 6;
+            h.forEach(r => {
+              totalVol += parseFloat(ethers.formatUnits(r.amount, dec));
+            });
+          }
+        } catch (e) { }
+        document.getElementById("statVolume").textContent = totalVol > 0 ? `$${totalVol.toFixed(2)}` : "$0";
+      } catch (e) { }
+    }
+
+    function shareOnTwitter(e) {
+      e.preventDefault();
+      const count = document.getElementById("statPayrolls").textContent;
+      const text = `Just sent on-chain payroll using HorizonPay on @tempo_xyz mainnet! 🚀\n\n${count} payrolls processed on-chain. Split stablecoin payments to your whole team in one tx.\n\nBuilt by @alexx_init\n#Tempo #DeFi #Web3`;
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+    }
+
+    function copyContract() {
+      const addr = document.getElementById("footerContract").textContent;
+      if (addr.includes("Deploy")) return;
+      navigator.clipboard.writeText(addr);
+      showToast("Contract address copied!", "success");
+    }
+
+    function setContractAddress(addr) {
+      const el = document.getElementById("footerContract");
+      if (el) el.textContent = `${addr.slice(0, 10)}...${addr.slice(-8)}`;
+    }
+
+    /* ══════════════════════════════════════════
+       RECIPIENTS UI
+    ══════════════════════════════════════════ */
+    function addRecipient() {
+      const list = document.getElementById("recipientList");
+      const existing = list.querySelectorAll(".recipient-row").length;
+      if (existing >= 20) { showToast("Max 20 recipients", "error"); return; }
+      recipientCount++;
+      const id = recipientCount;
+      const div = document.createElement("div");
+      div.className = "recipient-row"; div.id = `rec-${id}`;
+      div.innerHTML = `
+    <div class="field"><label>Wallet Address</label><input type="text" id="rw-${id}" placeholder="0x..."/></div>
+    <div class="share-box"><label style="font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Share</label><div class="share-input-wrap"><input type="number" id="rp-${id}" placeholder="50" min="1" max="100" oninput="updateBPS(${id})"/></div><div class="bps-display" id="rd-${id}">— BPS</div></div>
+    <div class="field"><label>Label</label><input type="text" id="rl-${id}" placeholder="Alice - Design"/></div>
+    <button class="btn-danger-sm" onclick="removeRecipient(${id})" style="align-self:flex-end;margin-bottom:2px">✕</button>`;
+      list.appendChild(div);
+      updateTotalBPS();
+    }
+
+    function removeRecipient(id) {
+      document.getElementById(`rec-${id}`)?.remove();
+      updateTotalBPS();
+    }
+
+    function updateBPS(id) {
+      const pct = parseFloat(document.getElementById(`rp-${id}`)?.value || 0);
+      const bps = Math.round(pct * 100);
+      const el = document.getElementById(`rd-${id}`);
+      if (el) el.textContent = `${bps} BPS`;
+      updateTotalBPS();
+    }
+
+    function updateTotalBPS() {
+      const inputs = document.querySelectorAll("[id^='rp-']");
+      let total = 0;
+      inputs.forEach(i => total += parseFloat(i.value || 0) * 100);
+      const el = document.getElementById("totalBpsDisplay");
+      const pct = (total / 100).toFixed(1);
+      el.textContent = `${pct}% of 100%`;
+      el.className = total > 10000 ? "bps-warn" : total === 10000 ? "" : ""
+      el.style.color = total > 10000 ? "var(--danger)" : total === 10000 ? "var(--accent)" : "var(--muted)";
+    }
+
+    /* ══════════════════════════════════════════
+       CREATE CONFIG
+    ══════════════════════════════════════════ */
+    async function createConfig() {
+      if (!signer) { showToast("Connect wallet first", "error"); return; }
+      const name = document.getElementById("f-name").value.trim();
+      const tokenKey = document.getElementById("f-token").value;
+      if (!name) { showToast("Enter payroll name", "error"); return; }
+
+      const tokenInfo = tokenKey === "CUSTOM" ? { address: document.getElementById("f-customToken").value.trim(), decimals: 18, symbol: "TOKEN" } : TOKENS[tokenKey];
+      if (!tokenInfo?.address) { showToast("Select a token", "error"); return; }
+
+      const rows = document.querySelectorAll("[id^='rec-']");
+      if (!rows.length) { showToast("Add at least one recipient", "error"); return; }
+
+      const wallets = [], bpsArr = [], labels = [];
+      let totalBps = 0;
+      for (const row of rows) {
+        const id = row.id.replace("rec-", "");
+        const w = document.getElementById(`rw-${id}`)?.value.trim();
+        const p = parseFloat(document.getElementById(`rp-${id}`)?.value || 0);
+        const l = document.getElementById(`rl-${id}`)?.value.trim() || "";
+        if (!w || !ethers.isAddress(w)) { showToast(`Invalid wallet in row ${id}`, "error"); return; }
+        if (p <= 0) { showToast(`Invalid % in row ${id}`, "error"); return; }
+        wallets.push(w); bpsArr.push(Math.round(p * 100)); labels.push(l); totalBps += Math.round(p * 100);
+      }
+      if (totalBps > 10000) { showToast("Total exceeds 100%", "error"); return; }
+
+      const btn = document.getElementById("createBtn");
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span>  Creating…';
+
+      try {
+        const tx = await contract.createConfig(name, tokenInfo.address, wallets, bpsArr, labels);
+        showToast("Transaction submitted…", "info");
+        const receipt = await tx.wait();
+        showToast(`Payroll "${name}" created! 🎉`, "success");
+        await loadConfigs();
+        switchTab("manage", document.querySelectorAll(".tab")[1]);
+      } catch (e) { showToast(e.reason || e.message || "Failed", "error"); }
+      finally { btn.disabled = false; btn.textContent = "Create Payroll Setup"; }
+    }
+
+    /* ══════════════════════════════════════════
+       LOAD CONFIGS
+    ══════════════════════════════════════════ */
+    async function loadConfigs() {
+      if (!contract || !userAddress) return;
+      try {
+        const ids = await contract.getOwnerConfigs(userAddress);
+        const configs = await Promise.all(ids.map(id => contract.getConfig(id)));
+        renderConfigs(configs.slice().reverse());
+      } catch (e) { console.error(e); }
+    }
+
+    function renderConfigs(configs) {
+      const list = document.getElementById("configList");
+      if (!configs.length) { list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div>No payrolls yet</div><p>Create your first payroll setup</p></div>`; return; }
+      list.innerHTML = configs.map(cfg => {
+        const tk = getTokenByAddr(cfg.token); const sym = tk?.symbol || "TOKEN";
+        const pct = (Number(cfg.totalBps) / 100).toFixed(0);
+        return `<div class="config-card">
+      <div class="config-head">
+        <div>
+          <div class="config-name">${esc(cfg.name)}</div>
+          <div class="config-meta">
+            <span>${cfg.recipients.length} recipients</span>
+            <span>${sym}</span>
+            <span>${pct}% allocated</span>
+            <span>Created ${new Date(Number(cfg.createdAt) * 1000).toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge ${cfg.active ? 'b-active' : 'b-inactive'}">${cfg.active ? 'Active' : 'Paused'}</span>
+        </div>
+      </div>
+      <div class="config-body">
+        <div class="recipients-grid">
+          ${cfg.recipients.map(r => `<div class="recipient-chip">
+            <div class="chip-label">${esc(r.label) || "Recipient"}</div>
+            <div class="chip-addr">${r.wallet.slice(0, 8)}…${r.wallet.slice(-6)}</div>
+            <div class="chip-bps">${(Number(r.bps) / 100).toFixed(1)}%</div>
+          </div>`).join("")}
+        </div>
+        <div class="config-actions">
+          <button class="btn-outline" onclick="openSendModal(${cfg.id})">▶ Send Payroll</button>
+          <button class="btn-outline" onclick="viewHistory(${cfg.id})">History</button>
+          <button class="btn-danger-sm" onclick="toggleConfig(${cfg.id},${!cfg.active})">${cfg.active ? "Pause" : "Resume"}</button>
+        </div>
+      </div>
+    </div>`;
+      }).join("");
+    }
+
+    /* ══════════════════════════════════════════
+       SEND MODAL
+    ══════════════════════════════════════════ */
+    async function openSendModal(configId) {
+      if (!contract) { showToast("Connect wallet first", "error"); return; }
+      try {
+        const cfg = await contract.getConfig(configId);
+        const tk = getTokenByAddr(cfg.token); const sym = tk?.symbol || "TOKEN"; const dec = tk?.decimals || 18;
+        pendingSendConfig = { configId, cfg, tk, sym, dec };
+
+        document.getElementById("sendModalContent").innerHTML = `
+      <div class="field" style="margin-bottom:16px">
+        <label>Payment Amount (${sym})</label>
+        <div class="amt-row">
+          <input type="number" id="send-amount" placeholder="1000.00" min="0" step="any" oninput="updateSplitPreview()"/>
+          <div style="display:flex;align-items:center;padding:0 14px;background:rgba(255,255,255,.04);border:1px solid var(--border-light);border-radius:3px;font-size:.8rem;color:var(--muted)">${sym}</div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Payment Note (optional)</label>
+        <input type="text" id="send-note" placeholder="March 2026 payroll…"/>
+      </div>
+      <div id="splitPreview" style="display:none"></div>
+      <div class="fee-note" id="sendFeeNote" style="display:none">
+        <span>Platform fee (0.3%): <strong id="sendFee">—</strong></span>
+        <span>Net distributed: <strong id="sendNet">—</strong></span>
+      </div>
+      <button class="btn" id="sendConfirmBtn" onclick="confirmSend()" style="margin-top:20px">Confirm & Send</button>`;
+
+        document.getElementById("sendModal").classList.add("open");
+      } catch (e) { showToast("Failed to load config", "error"); }
+    }
+
+    async function updateSplitPreview() {
+      if (!pendingSendConfig || !contract) return;
+      const amt = parseFloat(document.getElementById("send-amount")?.value || 0);
+      const preview = document.getElementById("splitPreview");
+      const feeNote = document.getElementById("sendFeeNote");
+      if (!amt || amt <= 0) { preview.style.display = "none"; feeNote.style.display = "none"; return; }
+
+      const { configId, cfg, tk, sym, dec } = pendingSendConfig;
+      const amtWei = ethers.parseUnits(amt.toString(), dec);
+
+      try {
+        const [wallets, amounts, fee] = await contract.calculateSplit(configId, amtWei);
+        const feeAmt = parseFloat(ethers.formatUnits(fee, dec)).toFixed(6);
+        const net = (amt - parseFloat(feeAmt)).toFixed(4);
+        document.getElementById("sendFee").textContent = `${feeAmt} ${sym}`;
+        document.getElementById("sendNet").textContent = `${net} ${sym}`;
+        feeNote.style.display = "flex";
+
+        let rows = `<div class="split-preview"><div class="split-title">Payment breakdown</div>`;
+        cfg.recipients.forEach((r, i) => {
+          const share = parseFloat(ethers.formatUnits(amounts[i], dec)).toFixed(4);
+          rows += `<div class="split-row"><span class="split-label">${esc(r.label) || r.wallet.slice(0, 10) + "…"}</span><span class="split-amount">${share} ${sym}</span></div>`;
+        });
+        rows += `<div class="split-divider"></div><div class="split-row split-total"><span class="split-label">Total</span><span class="split-amount">${amt.toFixed(4)} ${sym}</span></div></div>`;
+        preview.innerHTML = rows; preview.style.display = "block";
+      } catch (e) { console.error(e); }
+    }
+
+    async function confirmSend() {
+      if (!contract || !pendingSendConfig) return;
+      const amt = parseFloat(document.getElementById("send-amount")?.value || 0);
+      const note = document.getElementById("send-note")?.value.trim() || "";
+      if (!amt || amt <= 0) { showToast("Enter amount", "error"); return; }
+
+      const { configId, tk, sym, dec } = pendingSendConfig;
+      const amtWei = ethers.parseUnits(amt.toString(), dec);
+      const tkAddr = tk?.address || TOKENS.USDC.address;
+
+      const btn = document.getElementById("sendConfirmBtn");
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span>  Processing…';
+
+      try {
+        // Approve
+        const erc = new ethers.Contract(tkAddr, ERC20_ABI, signer);
+        const allowance = await erc.allowance(userAddress, CONTRACT_ADDRESS);
+        if (allowance < amtWei) {
+          showToast("Approving token…", "info");
+          const appTx = await erc.approve(CONTRACT_ADDRESS, amtWei);
+          await appTx.wait();
+        }
+
+        const tx = await contract.sendPayrollERC20(configId, amtWei, note);
+        showToast("Sending payroll…", "info");
+        const receipt = await tx.wait();
+
+        closeModal("sendModal");
+        await refreshStats(); await loadAllHistory();
+
+        document.getElementById("successTitle").textContent = "Payroll Sent! 🎉";
+        document.getElementById("successSub").textContent = `${amt.toFixed(4)} ${sym} distributed to ${pendingSendConfig.cfg.recipients.length} recipients`;
+        const txEl = document.getElementById("successTx");
+        txEl.textContent = `TX: ${receipt.hash}`; txEl.style.display = "block";
+        const pdfData = encodeURIComponent(JSON.stringify({ configId, amount: amt, sym, note, txHash: receipt.hash, recipients: pendingSendConfig.cfg.recipients, dec }));
+        document.getElementById("successActions").innerHTML = `
+      <button class="btn-outline" onclick="window.open('${TEMPO_CHAIN.blockExplorerUrls[0]}/tx/${receipt.hash}','_blank')" style="margin-top:0">Explorer</button>
+      <button class="btn" onclick="downloadPayrollPDF(decodeURIComponent('${pdfData}'))" style="margin-top:0">📄 Receipt</button>`;
+        // Twitter share banner
+        const existing = document.querySelector(".share-banner"); if (existing) existing.remove();
+        const banner = document.createElement("div"); banner.className = "share-banner";
+        const tweetText = encodeURIComponent(`Just sent on-chain payroll with HorizonPay on @tempo_xyz mainnet! 🚀\n\n${amt.toFixed(2)} ${sym} split across ${pendingSendConfig.cfg.recipients.length} teammates in one transaction.\n\n#Tempo #Web3 #DeFi`);
+        banner.innerHTML = `<div class="share-banner-text">🎉 <strong>Payroll sent!</strong> Share it on X</div><a class="twitter-btn" href="https://twitter.com/intent/tweet?text=${tweetText}" target="_blank">𝕏 Share</a>`;
+        document.querySelector("#successModal .success-wrap").appendChild(banner);
+        document.getElementById("successModal").classList.add("open");
+      } catch (e) {
+        if (e.code === 4001) showToast("Rejected", "error");
+        else showToast(e.reason || e.message || "Failed", "error");
+      } finally { btn.disabled = false; btn.textContent = "Confirm & Send"; }
+    }
+
+    /* ══════════════════════════════════════════
+       HISTORY
+    ══════════════════════════════════════════ */
+    async function loadAllHistory() {
+      if (!contract || !userAddress) return;
+      try {
+        const ids = await contract.getOwnerConfigs(userAddress);
+        allHistory = [];
+        for (const id of ids) {
+          try {
+            const h = await contract.getHistory(id);
+            const cfg = await contract.getConfig(id);
+            const tk = getTokenByAddr(cfg.token);
+            const dec = tk?.decimals || 6;
+            const sym = tk?.symbol || "TOKEN";
+            h.forEach(r => {
+              allHistory.push({
+                id: Number(r.id),
+                configId: Number(r.configId),
+                amount: r.amount,
+                token: cfg.token,
+                fee: r.fee,
+                timestamp: r.timestamp,
+                recipientCount: Number(r.recipientCount),
+                note: r.note,
+                configName: cfg.name,
+                dec, sym
+              });
+            });
+          } catch (e) { console.error("History load error:", e); }
+        }
+        allHistory.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+        renderHistory(allHistory);
+      } catch (e) { console.error("loadAllHistory:", e); }
+    }
+
+    async function viewHistory(configId) {
+      switchTab("history", document.querySelectorAll(".tab")[2]);
+      if (!contract) return;
+      try {
+        const h = await contract.getHistory(configId);
+        const cfg = await contract.getConfig(configId);
+        const filtered = h.map(r => ({ ...r, configName: cfg.name, token: cfg.token }));
+        renderHistory(filtered);
+      } catch (e) { }
+    }
+
+    function renderHistory(records) {
+      const list = document.getElementById("historyList");
+      if (!records.length) { list.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div>No payments yet</div><p>Your payment history will appear here</p></div>`; return; }
+      list.innerHTML = records.map(r => {
+        const dec = r.dec || 6; const sym = r.sym || getTokenByAddr(r.token)?.symbol || "TOKEN";
+        const amt = parseFloat(ethers.formatUnits(r.amount, dec)).toFixed(4);
+        const fee = parseFloat(ethers.formatUnits(r.fee, dec)).toFixed(6);
+        const safeNote = (r.note || "").replace(/'/g, "&#39;");
+        return `<div class="history-item">
+      <div class="history-head">
+        <div>
+          <div class="history-id">#${r.id} · ${esc(r.configName || "")}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:3px">${new Date(Number(r.timestamp) * 1000).toLocaleString()}</div>
+        </div>
+        <div class="history-amount">${amt} ${sym}</div>
+      </div>
+      <div style="padding:10px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--border-light)">
+        <div class="history-meta">
+          <span>${r.recipientCount} recipients</span>
+          <span>Fee: ${fee} ${sym}</span>
+          ${r.note ? `<span>Note: ${esc(r.note)}</span>` : ""}
+        </div>
+        <div class="history-actions">
+          <button class="btn-outline" style="font-size:.65rem" onclick="downloadPayrollPDF('${encodeURIComponent(JSON.stringify({ amount: parseFloat(amt), sym, note: safeNote, txHash: '', configId: r.configId, recipientCount: r.recipientCount }))}')">📄 Receipt</button>
+        </div>
+      </div>
+    </div>`;
+      }).join("");
+    }
+
+    /* ══════════════════════════════════════════
+       TOGGLE CONFIG
+    ══════════════════════════════════════════ */
+    async function toggleConfig(id, active) {
+      if (!contract) return;
+      try {
+        const tx = await contract.toggleConfig(id, active);
+        showToast(active ? "Resumed" : "Paused", "info");
+        await tx.wait();
+        showToast("Updated!", "success");
+        loadConfigs();
+      } catch (e) { showToast(e.reason || e.message || "Failed", "error"); }
+    }
+
+    /* ══════════════════════════════════════════
+       PDF RECEIPT
+    ══════════════════════════════════════════ */
+    function downloadPayrollPDF(dataStr) {
+      let d;
+      try { const decoded = decodeURIComponent(dataStr); d = JSON.parse(decoded); }
+      catch (e) { try { d = JSON.parse(dataStr); } catch (e2) { showToast("PDF generation failed", "error"); return; } }
+      if (!d) { showToast("No data", "error"); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const W = 210;
+
+      // ── Cream paper background ──
+      doc.setFillColor(249, 246, 240); doc.rect(0, 0, W, 297, "F");
+      // Subtle ruled lines
+      doc.setDrawColor(238, 233, 222); doc.setLineWidth(0.12);
+      for (let i = 0; i < 30; i++)doc.line(0, i * 10, W, i * 10);
+
+      // ── Black header band ──
+      doc.setFillColor(8, 8, 8); doc.rect(0, 0, W, 54, "F");
+
+      // ── Hole punches ──
+      doc.setFillColor(249, 246, 240);
+      [14, 30, 46].forEach(y => doc.circle(8, y, 3.5, "F"));
+
+      // ── Brand ──
+      doc.setTextColor(0, 212, 170); doc.setFontSize(26); doc.setFont("helvetica", "bold");
+      doc.text("HorizonPay", W / 2, 20, { align: "center" });
+      doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(100, 100, 100);
+      doc.setCharSpace(2); doc.text("PAYROLL RECEIPT  ·  TEMPO NETWORK", W / 2, 30, { align: "center" }); doc.setCharSpace(0);
+      doc.setFontSize(8); doc.setTextColor(130, 130, 130);
+      doc.text(new Date().toLocaleString(), W / 2, 40, { align: "center" });
+
+      // ── PAID badge ──
+      doc.setFillColor(0, 212, 170); doc.roundedRect(W / 2 - 15, 43, 30, 10, 2, 2, "F");
+      doc.setTextColor(8, 8, 8); doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.setCharSpace(2); doc.text("PAID", W / 2, 50, { align: "center" }); doc.setCharSpace(0);
+
+      // ── Dashed tear line ──
+      doc.setDrawColor(180, 170, 155); doc.setLineWidth(0.4);
+      doc.setLineDashPattern([2, 2], 0); doc.line(15, 60, W - 15, 60); doc.setLineDashPattern([], 0);
+      doc.setTextColor(180, 170, 155); doc.setFontSize(10); doc.text("✂", 11, 61);
+
+      // ── Big amount ──
+      let y = 74;
+      doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(120, 110, 95);
+      doc.setCharSpace(1.5); doc.text("TOTAL AMOUNT", W / 2, y, { align: "center" }); doc.setCharSpace(0);
+      doc.setFontSize(34); doc.setFont("helvetica", "bold"); doc.setTextColor(8, 8, 8);
+      doc.text(`${parseFloat(d.amount || 0).toFixed(4)}`, W / 2, y + 14, { align: "center" });
+      doc.setFontSize(14); doc.setTextColor(0, 160, 120);
+      doc.text(d.sym || "", W / 2, y + 24, { align: "center" });
+      y += 34;
+
+      // ── Divider ──
+      doc.setDrawColor(205, 195, 178); doc.setLineWidth(0.4); doc.line(20, y, W - 20, y); y += 10;
+
+      // ── Info rows ──
+      function row(label, val) {
+        doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+        doc.setTextColor(130, 118, 100); doc.setCharSpace(1);
+        doc.text(label.toUpperCase(), 22, y); doc.setCharSpace(0);
+        doc.setFont("helvetica", "bold"); doc.setTextColor(30, 25, 20);
+        doc.text(String(val || "—"), W - 22, y, { align: "right" });
+        doc.setDrawColor(225, 215, 198); doc.setLineWidth(0.2); doc.line(22, y + 3, W - 22, y + 3);
+        y += 11;
+      }
+      row("Recipients", d.recipientCount || d.recipients?.length || "—");
+      row("Date", new Date().toLocaleDateString());
+      row("Network", "Tempo Mainnet");
+      row("Platform Fee", "0.3%");
+      if (d.note && d.note.trim()) row("Note", d.note);
+      y += 4;
+
+      // ── Recipients breakdown ──
+      if (d.recipients?.length) {
+        doc.setDrawColor(205, 195, 178); doc.setLineWidth(0.3); doc.line(20, y, W - 20, y); y += 8;
+        doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(120, 108, 90);
+        doc.setCharSpace(1.5); doc.text("RECIPIENT BREAKDOWN", 22, y); doc.setCharSpace(0); y += 8;
+        d.recipients.forEach((r, i) => {
+          if (i % 2 === 0) { doc.setFillColor(242, 238, 230); doc.rect(20, y - 5, W - 40, 9, "F"); }
+          doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(30, 25, 20);
+          doc.text(r.label || `Recipient ${i + 1}`, 25, y);
+          doc.setTextColor(0, 140, 110); doc.setFont("helvetica", "bold");
+          doc.text(`${(Number(r.bps) / 100).toFixed(1)}%`, W - 22, y, { align: "right" });
+          y += 10;
+        });
+        y += 4;
+      }
+
+      // ── TX Hash ──
+      if (d.txHash && d.txHash.length > 10) {
+        doc.setDrawColor(205, 195, 178); doc.setLineWidth(0.3); doc.line(20, y, W - 20, y); y += 8;
+        doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(120, 108, 90);
+        doc.setCharSpace(1.5); doc.text("TRANSACTION HASH", 22, y); doc.setCharSpace(0); y += 7;
+        doc.setFontSize(6.5); doc.setFont("courier", "normal"); doc.setTextColor(80, 72, 60);
+        doc.text(d.txHash, 22, y); y += 10;
+      }
+
+      // ── Bottom tear line ──
+      doc.setDrawColor(180, 170, 155); doc.setLineWidth(0.4);
+      doc.setLineDashPattern([2, 2], 0); doc.line(15, 262, W - 15, 262); doc.setLineDashPattern([], 0);
+      doc.setTextColor(180, 170, 155); doc.setFontSize(10); doc.text("✂", W - 14, 263);
+
+      // ── Barcode ──
+      for (let i = 0; i < 85; i++) {
+        const bx = 25 + (i * 1.9);
+        const bh = i % 5 === 0 ? 14 : i % 3 === 0 ? 10 : i % 2 === 0 ? 12 : 7;
+        const shade = i % 7 === 0 ? 30 : i % 3 === 0 ? 80 : 60;
+        doc.setFillColor(shade, shade, shade);
+        doc.rect(bx, 265, 1.4, bh, "F");
+      }
+      doc.setFontSize(6.5); doc.setFont("courier", "normal"); doc.setTextColor(100, 90, 75);
+      doc.text(`${Date.now().toString().slice(-5)} ${Math.floor(Math.random() * 9000 + 1000)} ${Math.floor(Math.random() * 9000 + 1000)}`, W / 2, 281, { align: "center" });
+
+      // ── Footer ──
+      doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(150, 138, 118);
+      doc.setCharSpace(0.5); doc.text("HorizonPay — Payroll Infrastructure on Tempo", W / 2, 287, { align: "center" });
+      doc.setCharSpace(1.5); doc.text("VERIFIED ON-CHAIN  ·  TEMPO MAINNET", W / 2, 292, { align: "center" });
+      doc.setCharSpace(0);
+
+      // ── Watermark ──
+      doc.saveGraphicsState();
+      doc.setGState(doc.GState({ opacity: 0.03 }));
+      doc.setFontSize(55); doc.setFont("helvetica", "bold"); doc.setTextColor(0, 0, 0);
+      doc.text("HORIZONPAY", W / 2, 155, { align: "center", angle: 45 });
+      doc.restoreGraphicsState();
+
+      doc.save(`HorizonPay_Receipt_${Date.now()}.pdf`);
+      showToast("Receipt downloaded! 📄", "success");
+    }
+
+    /* ══════════════════════════════════════════
+       HELPERS
+    ══════════════════════════════════════════ */
+    function switchTab(name, el) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tc").forEach(t => t.classList.remove("active"));
+      el.classList.add("active"); document.getElementById(`tc-${name}`).classList.add("active");
+      if (name === "manage") loadConfigs();
+      if (name === "history") loadAllHistory();
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+    function getTokenByAddr(addr) { return Object.values(TOKENS).find(t => t.address?.toLowerCase() === addr?.toLowerCase()); }
+    function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    let toastTimer;
+    function showToast(msg, type = "info") {
+      const t = document.getElementById("toast");
+      const icons = { success: "✓", error: "✕", info: "◎" };
+      document.getElementById("toastIcon").textContent = icons[type];
+      document.getElementById("toastMsg").textContent = msg;
+      t.className = `toast ${type} show`;
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3800);
+    }
+    document.getElementById("f-token").addEventListener("change", function () {
+      document.getElementById("customField").style.display = this.value === "CUSTOM" ? "block" : "none";
+    });
+    document.querySelectorAll(".overlay").forEach(o => o.addEventListener("click", e => { if (e.target === o) o.classList.remove("open"); }));
+
+    // Add initial recipient
+    addRecipient();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+</body>
+
+</html>
